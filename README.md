@@ -270,17 +270,4 @@ terraform plan
 3. Commit changes (`git commit -m 'Add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
-
-## 📄 License
-
-Proprietary - All rights reserved. This software contains confidential pharmaceutical logistics intellectual property.
-
-## 📞 Support
-
-- **Security Issues**: security@pharmatrack.example.com
-- **Compliance Questions**: compliance@pharmatrack.example.com
-- **Technical Support**: support@pharmatrack.example.com
-
----
-
-**PharmaTrack** - Ensuring pharmaceutical integrity from manufacturer to patient. 💊🚛❄️
+   
