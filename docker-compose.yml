@@ -1,0 +1,130 @@
+# Pharma Cold Track - Docker Compose for Local Development
+# Services: Frontend (React), Lambda (Local), DynamoDB (Local), LocalStack (AWS mock)
+
+services:
+  # Frontend Development Server
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev-environment
+    command: frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend_vite:/app/frontend_vite
+      - /app/frontend_vite/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:4000/graphql
+      - VITE_WS_URL=ws://localhost:4000/graphql
+      - VITE_AWS_REGION=us-east-1
+    networks:
+      - pharma-network
+    restart: unless-stopped
+
+  # Lambda Local Runtime
+  lambda:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: lambda-runtime
+    ports:
+      - "9000:8080"
+    environment:
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - DYNAMODB_TABLE=dev-excursions
+      - SNS_CRITICAL=arn:aws:sns:us-east-1:000000000000:dev-critical-alerts
+      - AWS_ENDPOINT_URL=http://localstack:4566
+    depends_on:
+      - localstack
+      - dynamodb
+    networks:
+      - pharma-network
+    restart: unless-stopped
+
+  # Local DynamoDB
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath /data"
+    ports:
+      - "8000:8000"
+    volumes:
+      - dynamodb-data:/data
+    networks:
+      - pharma-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # LocalStack for AWS Services (SNS, S3, IoT, etc.)
+  localstack:
+    image: localstack/localstack:3.0
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    environment:
+      - SERVICES=dynamodb,sns,s3,iot,kinesis,lambda,logs,iam,sts
+      - DEBUG=1
+      - LAMBDA_EXECUTOR=docker
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - localstack-data:/var/lib/localstack
+      - ./docker/localstack-init:/etc/localstack/init/ready.d
+    networks:
+      - pharma-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Terraform CLI Container
+  terraform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: dev-environment
+    command: infra
+    volumes:
+      - ./infrastructure:/app/infrastructure
+      - ./docker/terraform.tfvars:/app/infrastructure/terraform.tfvars
+      - ~/.aws:/root/.aws:ro
+    environment:
+      - AWS_REGION=us-east-1
+      - TF_IN_AUTOMATION=1
+    working_dir: /app/infrastructure
+    networks:
+      - pharma-network
+    profiles:
+      - infra
+
+  # Frontend Production (Nginx)
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-runtime
+    ports:
+      - "80:80"
+    networks:
+      - pharma-network
+    profiles:
+      - prod
+    restart: unless-stopped
+
+volumes:
+  dynamodb-data:
+  localstack-data:
+
+networks:
+  pharma-network:
+    driver: bridge

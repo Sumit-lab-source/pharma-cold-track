@@ -1,0 +1,76 @@
+# Production Override - Use with: docker-compose -f docker-compose.yml -f docker-compose.override.yml up
+
+services:
+  # Production Frontend (Nginx)
+  frontend-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend-runtime
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx-ssl:/etc/nginx/ssl:ro
+    environment:
+      - NGINX_SSL_ENABLED=true
+    networks:
+      - pharma-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+  # Production API Gateway (AppSync)
+  appsync:
+    image: public.ecr.aws/appsync/graphql-gateway:latest
+    ports:
+      - "4000:4000"
+    environment:
+      - GRAPHQL_ENDPOINT=https://your-api.appsync-api.us-east-1.amazonaws.com/graphql
+      - AWS_REGION=us-east-1
+    networks:
+      - pharma-network
+    profiles:
+      - prod
+
+  # Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - pharma-network
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - pharma-network
+    profiles:
+      - monitoring
+
+volumes:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  pharma-network:
+    driver: bridge
