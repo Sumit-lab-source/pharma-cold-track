@@ -96,6 +96,11 @@ pharma-cold-track/
 └── docs/                          # Documentation
 ```
 
+## 🌐 Live Demo
+You can view a live demonstration of the PharmaTrack frontend here:
+**[https://pharma-cold-track.vercel.app](https://pharma-cold-track.vercel.app)**
+*(Note: This is a frontend demo using simulated data. The full backend architecture (AWS IoT, Lambda, DynamoDB) is defined in the `/infrastructure` and `/services` directories for enterprise deployment.)*
+
 ## 🚀 Quick Start
 
 ### Prerequisites
