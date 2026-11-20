@@ -616,8 +616,18 @@ export default function Compliance() {
                     <div className="flex justify-between text-slate-400 py-1"><span className="text-slate-500">Expires</span><span className="font-medium text-slate-300">{cert.expiry}</span></div>
                   </div>
                   <div className="mt-4 pt-3 border-t border-white/[0.04] flex gap-2">
-                    <button className="flex-1 py-1.5 text-xs font-semibold text-teal-400 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 rounded-lg transition-colors">Certificate</button>
-                    <button className="flex-1 py-1.5 text-xs font-semibold text-slate-400 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] rounded-lg transition-colors">Audit Trail</button>
+                    <button
+                      onClick={() => alert(`Certificate for ${cert.name} downloaded.`)}
+                      className="flex-1 py-1.5 text-xs font-semibold text-teal-400 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/20 rounded-lg transition-colors cursor-pointer"
+                    >
+                      Certificate
+                    </button>
+                    <button
+                      onClick={() => alert(`Audit trail for ${cert.name} exported.`)}
+                      className="flex-1 py-1.5 text-xs font-semibold text-slate-400 bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] rounded-lg transition-colors cursor-pointer"
+                    >
+                      Audit Trail
+                    </button>
                   </div>
                 </div>
               ))}
